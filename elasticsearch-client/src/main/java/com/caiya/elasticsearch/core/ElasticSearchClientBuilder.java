@@ -27,18 +27,19 @@ public final class ElasticSearchClientBuilder {
 
     private TransportClient client;
 
-    private String name;
+    private String refreshPolicy = "false";
 
-    private String refresh = "false";
+    private boolean refresh = false;
 
     private ElasticSearchClientBuilder() {
     }
 
-    public static ElasticSearchClientBuilder create() {
-        return new ElasticSearchClientBuilder();
+    public static ElasticSearchClientBuilder create(Map<String, String> settingsMap, List<String> clusters) {
+        return new ElasticSearchClientBuilder()
+                .settingsAndClusters(settingsMap, clusters);
     }
 
-    public ElasticSearchClientBuilder settingsAndClusters(Map<String, String> settingsMap, List<String> clusters) {
+    private ElasticSearchClientBuilder settingsAndClusters(Map<String, String> settingsMap, List<String> clusters) {
         return settingsAndClusters(settingsMap, clusters, settingsMap.containsKey(ElasticSearchConstant.XPACK_AUTH_SETTING));
     }
 
@@ -59,28 +60,30 @@ public final class ElasticSearchClientBuilder {
             }
             for (String transportAddress : clusters) {
                 String host = transportAddress.split(":")[0];
-                Integer port = Integer.parseInt(transportAddress.split(":")[1]);
+                int port = Integer.parseInt(transportAddress.split(":")[1]);
                 client.addTransportAddress(new TransportAddress(InetAddress.getByName(host), port));
             }
         } catch (Exception e) {
             logger.error("elasticsearch client init failed", e);
-            try {
-                client.close();
-                client = null;
-            } catch (Exception e1) {
-                logger.error("elasticsearch client close failed", e);
+            if (client != null) {
+                try {
+                    client.close();
+                    client = null;// help gc
+                } catch (Exception e1) {
+                    logger.error("elasticsearch client close failed", e);
+                }
             }
         }
         return this;
     }
 
-    public ElasticSearchClientBuilder setClientName(String name) {
-        this.name = name;
+    public ElasticSearchClientBuilder setRefreshPolicy(String refreshPolicy) {
+        this.refreshPolicy = refreshPolicy == null ? "" : refreshPolicy;
         return this;
     }
 
-    public ElasticSearchClientBuilder setRefresh(String refresh) {
-        this.refresh = refresh == null ? "" : refresh;
+    public ElasticSearchClientBuilder setRefresh(boolean refresh) {
+        this.refresh = refresh;
         return this;
     }
 
@@ -95,6 +98,7 @@ public final class ElasticSearchClientBuilder {
 
         ElasticSearchClient elasticSearchClient = new ElasticSearchClient(client);
         elasticSearchClient.setName(name);
+        elasticSearchClient.setRefreshPolicy(refreshPolicy);
         elasticSearchClient.setRefresh(refresh);
         return elasticSearchClient;
     }

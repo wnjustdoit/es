@@ -42,17 +42,15 @@ public class ElasticSearchTemplate extends ElasticSearchAccessor implements Elas
             throw new IllegalArgumentException("clusters cannot be null");
 
         if (Objects.equals(getClientType(), EsClient.Type.TRANSPORT)) {
-            return ElasticSearchClientBuilder.create()
-                    .settingsAndClusters(getSettings(), getClusters())
+            return ElasticSearchClientBuilder.create(getSettings(), getClusters())
                     .setRefresh(getRefresh())
                     .build();
         } else if (Objects.equals(getClientType(), EsClient.Type.REST_HIGH_LEVEL)) {
-            return RestElasticSearchClientBuilder.create()
-                    .clusters(getClusters())
+            return RestElasticSearchClientBuilder.create(getClusters())
                     .setRefresh(getRefresh())
                     .build();
         }
-        throw new IllegalArgumentException("不支持的客户端类型:" + getClientType());
+        throw new IllegalArgumentException("Unsupported client type:" + getClientType());
     }
 
     private void close(Closeable client) {

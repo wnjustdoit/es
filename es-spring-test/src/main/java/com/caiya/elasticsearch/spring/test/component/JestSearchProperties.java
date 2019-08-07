@@ -5,22 +5,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * ElasticSearch属性.
+ * JestSearch属性.
  *
  * @author wangnan
  * @since 1.0
  */
 @Component
-@ConfigurationProperties(prefix = "es")
+@ConfigurationProperties(prefix = "jest")
 @Data
-public class ElasticSearchProperties {
-
-    private Map<String, String> settings;
+public class JestSearchProperties {
 
     private List<String> clusters;
-
 
 }

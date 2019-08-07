@@ -1,8 +1,10 @@
 package com.caiya.elasticsearch.core;
 
+import com.caiya.elasticsearch.ElasticSearchException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.caiya.elasticsearch.EsClient;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -16,7 +18,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -45,7 +46,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 /**
- * ElasticSearch client wrapper, use traditional transport client.
+ * ElasticSearch client wrapper, based on traditional transport client.
  *
  * @author wangnan
  * @since 1.0
@@ -55,16 +56,11 @@ public class ElasticSearchClient extends EsClient {
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchClient.class);
 
     /**
-     * the original client
+     * the original transport client
      */
     private final TransportClient client;
 
-    /**
-     * the refresh policy, @see https://www.elastic.co/guide/en/elasticsearch/reference/6.3/docs-refresh.html
-     */
-    private WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.NONE;
-
-    public ElasticSearchClient(TransportClient client) {
+    ElasticSearchClient(TransportClient client) {
         super(client);
 
         if (client == null)
@@ -76,7 +72,7 @@ public class ElasticSearchClient extends EsClient {
     @Override
     public boolean index(String index, String type, String id, String source) {
         IndexResponse response = client.prepareIndex(index, type, id)
-                .setRefreshPolicy(refreshPolicy)
+                .setRefreshPolicy(getRefreshPolicy())
                 .setSource(source, XContentType.JSON)
                 .get();
         return RestStatus.OK.equals(response.status());
@@ -85,6 +81,7 @@ public class ElasticSearchClient extends EsClient {
     @Override
     public Map<String, Object> get(String index, String type, String id) {
         GetResponse response = client.prepareGet(index, type, id)
+                .setRefresh(getRefresh())
                 .get();
         return response.getSource();
     }
@@ -92,13 +89,13 @@ public class ElasticSearchClient extends EsClient {
     @Override
     @Deprecated
     public boolean exists(String index, String type, String id) {
-        throw new UnsupportedOperationException("不支持exists操作");
+        throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
     public boolean delete(String index, String type, String id) {
         DeleteResponse response = client.prepareDelete(index, type, id)
-                .setRefreshPolicy(refreshPolicy)
+                .setRefreshPolicy(getRefreshPolicy())
                 .get();
         return RestStatus.OK.equals(response.status());
     }
@@ -106,22 +103,28 @@ public class ElasticSearchClient extends EsClient {
     @Override
     public boolean update(String index, String type, String id, String source) {
         UpdateResponse response = client.prepareUpdate(index, type, id)
-                .setRefreshPolicy(refreshPolicy)
+                .setRefreshPolicy(getRefreshPolicy())
                 .setDoc(source, XContentType.JSON)
                 .get();
         return RestStatus.OK.equals(response.status());
     }
 
     @Override
-    public boolean upsert(String index, String type, String id, String source) throws ExecutionException, InterruptedException {
+    public boolean upsert(String index, String type, String id, String source) {
         IndexRequest indexRequest = new IndexRequest(index, type, id)
-                .setRefreshPolicy(refreshPolicy)
+                .setRefreshPolicy(getRefreshPolicy())
                 .source(source, XContentType.JSON);
         UpdateRequest updateRequest = new UpdateRequest(index, type, id)
-                .setRefreshPolicy(refreshPolicy)
+                .setRefreshPolicy(getRefreshPolicy())
                 .doc(source, XContentType.JSON)
                 .upsert(indexRequest);
-        UpdateResponse response = client.update(updateRequest).get();
+        UpdateResponse response;
+        try {
+            response = client.update(updateRequest).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("upsert failed");
+            throw new ElasticSearchException(e);
+        }
         return RestStatus.OK.equals(response.status()) || RestStatus.CREATED.equals(response.status());
     }
 
@@ -130,6 +133,7 @@ public class ElasticSearchClient extends EsClient {
         List<Map<String, Object>> result = Lists.newArrayList();
         MultiGetResponse responses = client.prepareMultiGet()
                 .add(index, type, ids)
+                .setRefresh(getRefresh())
                 .get();
         for (MultiGetItemResponse itemResponse : responses) {
             GetResponse response = itemResponse.getResponse();
@@ -160,7 +164,7 @@ public class ElasticSearchClient extends EsClient {
     @Override
     public long deleteByQuery(QueryBuilder queryBuilder, String index) {
         BulkByScrollResponse response = DeleteByQueryAction.INSTANCE.newRequestBuilder(client)
-                .refresh(true)
+                .refresh(getRefresh())
                 .filter(queryBuilder)
                 .source(index)
                 .get();
@@ -170,7 +174,8 @@ public class ElasticSearchClient extends EsClient {
 
     @Override
     public void bulk(List<IndexRequest> indexRequests, List<IndexRequestBuilder> indexRequestBuilders, List<UpdateRequest> updateRequests, List<UpdateRequestBuilder> updateRequestBuilders, List<DeleteRequest> deleteRequests, List<DeleteRequestBuilder> deleteRequestBuilders) {
-        BulkRequestBuilder bulkRequest = client.prepareBulk().setRefreshPolicy(refreshPolicy);
+        BulkRequestBuilder bulkRequest = client.prepareBulk()
+                .setRefreshPolicy(getRefreshPolicy());
         if (indexRequests != null && !indexRequests.isEmpty()) {
             for (IndexRequest indexRequest : indexRequests) {
                 bulkRequest.add(indexRequest);
@@ -204,8 +209,8 @@ public class ElasticSearchClient extends EsClient {
         BulkResponse responses = bulkRequest.get();
         if (responses.hasFailures()) {
             BulkItemResponse[] itemResponses = responses.getItems();
-            logger.error("bulk failed, items:{}", itemResponses);
-            // TODOs 异常处理
+            logger.error("bulk failed, items:{}", ReflectionToStringBuilder.toString(itemResponses));
+            throw new ElasticSearchException("bulk failed");
         }
     }
 
@@ -214,7 +219,8 @@ public class ElasticSearchClient extends EsClient {
         List<IndexRequest> indexRequests = Lists.newArrayList();
         for (Map.Entry<String, String> idSource : idSources.entrySet()) {
             IndexRequest indexRequest = new IndexRequest(index, type, idSource.getKey())
-                    .source(idSource.getValue(), XContentType.JSON);
+                    .source(idSource.getValue(), XContentType.JSON)
+                    .setRefreshPolicy(getRefreshPolicy());
             indexRequests.add(indexRequest);
         }
         bulk(indexRequests, null, null, null, null, null);
@@ -224,7 +230,7 @@ public class ElasticSearchClient extends EsClient {
     public void bulkDelete(String index, String type, List<String> ids) {
         List<DeleteRequest> deleteRequests = Lists.newArrayList();
         for (String id : ids) {
-            DeleteRequest deleteRequest = new DeleteRequest(index, type, id);
+            DeleteRequest deleteRequest = new DeleteRequest(index, type, id).setRefreshPolicy(getRefreshPolicy());
             deleteRequests.add(deleteRequest);
         }
         bulk(null, null, null, null, deleteRequests, null);
@@ -234,7 +240,9 @@ public class ElasticSearchClient extends EsClient {
     public void bulkUpdate(String index, String type, Map<String, String> idSources) {
         List<UpdateRequest> updateRequests = Lists.newArrayList();
         for (Map.Entry<String, String> idSource : idSources.entrySet()) {
-            UpdateRequest updateRequest = new UpdateRequest(index, type, idSource.getKey()).doc(idSource.getValue(), XContentType.JSON);
+            UpdateRequest updateRequest = new UpdateRequest(index, type, idSource.getKey())
+                    .doc(idSource.getValue(), XContentType.JSON)
+                    .setRefreshPolicy(getRefreshPolicy());
             updateRequests.add(updateRequest);
         }
         bulk(null, null, updateRequests, null, null, null);
@@ -245,10 +253,12 @@ public class ElasticSearchClient extends EsClient {
         List<UpdateRequest> updateRequests = Lists.newArrayList();
         for (Map.Entry<String, String> idSource : idSources.entrySet()) {
             IndexRequest indexRequest = new IndexRequest(index, type, idSource.getKey())
-                    .source(idSource.getValue(), XContentType.JSON);
+                    .source(idSource.getValue(), XContentType.JSON)
+                    .setRefreshPolicy(getRefreshPolicy());
             UpdateRequest updateRequest = new UpdateRequest(index, type, idSource.getKey())
                     .doc(idSource.getValue(), XContentType.JSON)
-                    .upsert(indexRequest);
+                    .upsert(indexRequest)
+                    .setRefreshPolicy(getRefreshPolicy());
             updateRequests.add(updateRequest);
         }
         bulk(null, null, updateRequests, null, null, null);
@@ -282,6 +292,7 @@ public class ElasticSearchClient extends EsClient {
                 .filter(queryBuilder)
                 .size(1000)
                 .script(new Script(ScriptType.INLINE, script, "painless", Collections.emptyMap()))
+                .refresh(getRefresh())
                 .get();
         return response.getUpdated();
     }

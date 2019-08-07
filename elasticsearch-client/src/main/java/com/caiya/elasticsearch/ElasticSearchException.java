@@ -1,7 +1,7 @@
 package com.caiya.elasticsearch;
 
 /**
- * Elasticsearch Exception.
+ * ElasticsSearch Exception.
  *
  * @author wangnan
  * @since 1.0

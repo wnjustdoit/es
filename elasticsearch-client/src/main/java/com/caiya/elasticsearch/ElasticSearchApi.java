@@ -13,7 +13,6 @@ import org.elasticsearch.search.sort.SortOrder;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
  * ElasticSearch API.
@@ -81,7 +80,7 @@ public interface ElasticSearchApi {
      * @param id     id
      * @param source json string
      */
-    boolean upsert(String index, String type, String id, String source) throws ExecutionException, InterruptedException;
+    boolean upsert(String index, String type, String id, String source);
 
     /**
      * 批量查询

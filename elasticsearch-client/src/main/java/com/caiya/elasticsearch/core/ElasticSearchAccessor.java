@@ -1,6 +1,7 @@
 package com.caiya.elasticsearch.core;
 
 import com.caiya.elasticsearch.EsClient;
+import org.elasticsearch.action.support.WriteRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,9 @@ public abstract class ElasticSearchAccessor {
 
     private List<String> clusters;
 
-    private String refresh;
+    private WriteRequest.RefreshPolicy refreshPolicy;
+
+    private boolean refresh;
 
     private EsClient.Type clientType = EsClient.Type.REST_HIGH_LEVEL;
 
@@ -44,11 +47,19 @@ public abstract class ElasticSearchAccessor {
         return clusters;
     }
 
-    public void setRefresh(String refresh) {
+    public void setRefreshPolicy(WriteRequest.RefreshPolicy refreshPolicy) {
+        this.refreshPolicy = refreshPolicy;
+    }
+
+    public WriteRequest.RefreshPolicy getRefreshPolicy() {
+        return refreshPolicy;
+    }
+
+    public void setRefresh(boolean refresh) {
         this.refresh = refresh;
     }
 
-    protected String getRefresh() {
+    protected boolean getRefresh() {
         return refresh;
     }
 
