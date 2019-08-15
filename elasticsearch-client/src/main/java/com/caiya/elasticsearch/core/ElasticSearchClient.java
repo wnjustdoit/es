@@ -56,7 +56,7 @@ public class ElasticSearchClient extends EsClient {
     private static final Logger logger = LoggerFactory.getLogger(ElasticSearchClient.class);
 
     /**
-     * the original transport client
+     * The original transport client
      */
     private final TransportClient client;
 
@@ -75,7 +75,7 @@ public class ElasticSearchClient extends EsClient {
                 .setRefreshPolicy(getRefreshPolicy())
                 .setSource(source, XContentType.JSON)
                 .get();
-        return RestStatus.OK.equals(response.status());
+        return RestStatus.OK.equals(response.status()) || RestStatus.CREATED.equals(response.status());
     }
 
     @Override
@@ -219,8 +219,7 @@ public class ElasticSearchClient extends EsClient {
         List<IndexRequest> indexRequests = Lists.newArrayList();
         for (Map.Entry<String, String> idSource : idSources.entrySet()) {
             IndexRequest indexRequest = new IndexRequest(index, type, idSource.getKey())
-                    .source(idSource.getValue(), XContentType.JSON)
-                    .setRefreshPolicy(getRefreshPolicy());
+                    .source(idSource.getValue(), XContentType.JSON);
             indexRequests.add(indexRequest);
         }
         bulk(indexRequests, null, null, null, null, null);
@@ -230,7 +229,7 @@ public class ElasticSearchClient extends EsClient {
     public void bulkDelete(String index, String type, List<String> ids) {
         List<DeleteRequest> deleteRequests = Lists.newArrayList();
         for (String id : ids) {
-            DeleteRequest deleteRequest = new DeleteRequest(index, type, id).setRefreshPolicy(getRefreshPolicy());
+            DeleteRequest deleteRequest = new DeleteRequest(index, type, id);
             deleteRequests.add(deleteRequest);
         }
         bulk(null, null, null, null, deleteRequests, null);
@@ -301,7 +300,7 @@ public class ElasticSearchClient extends EsClient {
     public SearchResponse scroll(String index, QueryBuilder queryBuilder, String sortField, SortOrder sortOrder, int size) {
         return client.prepareSearch(index)
                 .addSort(sortField, sortOrder)
-                .setScroll(new TimeValue(60000))// timeout
+                .setScroll(TimeValue.timeValueMinutes(1))
                 .setQuery(queryBuilder)
                 .setSize(size)
                 .get();
@@ -310,10 +309,16 @@ public class ElasticSearchClient extends EsClient {
     @Override
     public SearchResponse scroll(String scrollId) {
         return client.prepareSearchScroll(scrollId)
-                .setScroll(new TimeValue(60000))
+                .setScroll(TimeValue.timeValueMinutes(1))
                 .execute()
                 .actionGet();
     }
 
-
+    @Override
+    public boolean clearScroll(String scrollId) {
+        return client.prepareClearScroll()
+                .addScrollId(scrollId)
+                .get()
+                .isSucceeded();
+    }
 }

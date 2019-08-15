@@ -192,7 +192,7 @@ public interface ElasticSearchApi {
     SearchHits matchQuery(String index, String type, String name, Object text, int from, int size);
 
     /**
-     * 根据搜索更新(一次最多更新1000条)
+     * 根据搜索更新（一次最多更新1000条）
      * ctx._source
      *
      * @param index        index
@@ -203,7 +203,7 @@ public interface ElasticSearchApi {
     long updateByQuery(String index, QueryBuilder queryBuilder, String script);
 
     /**
-     * 滚动轮询,首次轮询
+     * 滚动轮询，首次轮询
      *
      * @param index        index
      * @param queryBuilder queryBuilder
@@ -215,12 +215,19 @@ public interface ElasticSearchApi {
     SearchResponse scroll(String index, QueryBuilder queryBuilder, String sortField, SortOrder sortOrder, int size);
 
     /**
-     * 根据scrollId滚动轮询,再次轮询
+     * 根据scrollId滚动轮询，再次轮询
      *
      * @param scrollId scrollId
      * @return search response, include scrollId
      */
     SearchResponse scroll(String scrollId);
 
+    /**
+     * 清空scroll，不再轮询时
+     *
+     * @param scrollId scrollId
+     * @return clear result, true or false
+     */
+    boolean clearScroll(String scrollId);
 
 }

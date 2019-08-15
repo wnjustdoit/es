@@ -22,7 +22,7 @@ public abstract class ElasticSearchAccessor {
 
     private List<String> clusters;
 
-    private WriteRequest.RefreshPolicy refreshPolicy;
+    private WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.NONE;
 
     private boolean refresh;
 
@@ -48,7 +48,9 @@ public abstract class ElasticSearchAccessor {
     }
 
     public void setRefreshPolicy(WriteRequest.RefreshPolicy refreshPolicy) {
-        this.refreshPolicy = refreshPolicy;
+        if (refreshPolicy != null) {
+            this.refreshPolicy = refreshPolicy;
+        }
     }
 
     public WriteRequest.RefreshPolicy getRefreshPolicy() {
@@ -67,7 +69,7 @@ public abstract class ElasticSearchAccessor {
         this.clientType = clientType;
     }
 
-    protected EsClient.Type getClientType() {
+    public EsClient.Type getClientType() {
         return clientType;
     }
 

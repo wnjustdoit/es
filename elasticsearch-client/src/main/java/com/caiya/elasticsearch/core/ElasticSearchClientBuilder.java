@@ -34,13 +34,13 @@ public final class ElasticSearchClientBuilder {
     private ElasticSearchClientBuilder() {
     }
 
-    public static ElasticSearchClientBuilder create(Map<String, String> settingsMap, List<String> clusters) {
+    public static ElasticSearchClientBuilder create(Map<String, String> settings, List<String> clusters) {
         return new ElasticSearchClientBuilder()
-                .settingsAndClusters(settingsMap, clusters);
+                .settingsAndClusters(settings, clusters);
     }
 
-    private ElasticSearchClientBuilder settingsAndClusters(Map<String, String> settingsMap, List<String> clusters) {
-        return settingsAndClusters(settingsMap, clusters, settingsMap.containsKey(ElasticSearchConstant.XPACK_AUTH_SETTING));
+    private ElasticSearchClientBuilder settingsAndClusters(Map<String, String> settings, List<String> clusters) {
+        return settingsAndClusters(settings, clusters, settings.containsKey(ElasticSearchConstant.XPACK_AUTH_SETTING));
     }
 
     private ElasticSearchClientBuilder settingsAndClusters(Map<String, String> settingsMap, List<String> clusters, Boolean withXPack) {

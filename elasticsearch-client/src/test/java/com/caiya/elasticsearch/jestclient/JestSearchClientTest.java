@@ -1,29 +1,38 @@
-package com.caiya.elasticsearch.core;
+package com.caiya.elasticsearch.jestclient;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-import com.caiya.elasticsearch.jestclient.JestSearchClient;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import io.searchbox.client.JestResult;
 import io.searchbox.client.config.HttpClientConfig;
 import io.searchbox.core.*;
+import io.searchbox.core.search.sort.Sort;
+import io.searchbox.params.Parameters;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.*;
+import org.junit.runners.MethodSorters;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class JestSearchClientTest {
 
-    private JestSearchClient client;
+    protected JestSearchClient client;
 
     private String index = "item";
 
@@ -189,7 +198,7 @@ public class JestSearchClientTest {
         SearchSourceBuilder searchSourceBuilder2 = new SearchSourceBuilder();
         QueryBuilder queryBuilder2 = QueryBuilders.boolQuery().must(QueryBuilders.multiMatchQuery("德国", "title", "brand")).filter(QueryBuilders.termQuery("sendWay", 1));
         searchSourceBuilder2.sort("id", SortOrder.DESC);
-        searchSourceBuilder2.query(queryBuilder);
+        searchSourceBuilder2.query(queryBuilder2);
         searchSourceBuilder2.from(7);
         searchSourceBuilder2.size(9);
         Search search2 = new Search.Builder(searchSourceBuilder2.toString()).addIndex(index).addType(type).build();
@@ -202,6 +211,7 @@ public class JestSearchClientTest {
 
     @Test
     public void test_X_updateByQuery() {
+        // TODO
 //        UpdateByQueryRequestBuilder updateByQueryRequestBuilder = new UpdateByQueryRequestBuilder();
 //        client.updateByQuery();
     }
@@ -210,8 +220,48 @@ public class JestSearchClientTest {
      * @see <a href="https://github.com/searchbox-io/Jest/blob/master/jest/src/test/java/io/searchbox/core/SearchScrollIntegrationTest.java">search scroll test</a>
      */
     @Test
-    public void test_H_scroll() {
+    public void test_H_scroll() throws IOException {
+        Map<String, Map<String, Object>> result = Maps.newHashMap();
+        int batchSize = 500;
+        QueryBuilder queryBuilder = QueryBuilders.matchAllQuery();
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
+                .query(queryBuilder)
+                .size(batchSize);
+        Search search = new Search.Builder(searchSourceBuilder.toString())
+                .addIndex(index)
+                .addType(type)
+                .addSort(new Sort("updated", Sort.Sorting.DESC))
+                .setParameter(Parameters.SCROLL, "1m")
+                .build();
+        JestResult jestResult = client.searchScroll(search);
+        JsonArray hits = jestResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
+        Assert.assertEquals(
+                "only 500 document should be returned",
+                batchSize,
+                hits.size()
+        );
+        appendToResult(hits, result);
+        String scrollId = jestResult.getJsonObject().get("_scroll_id").getAsString();
+        try {
+            while (hits.size() > 0) {
+                jestResult = client.searchScroll(scrollId);
+                hits = jestResult.getJsonObject().getAsJsonObject("hits").getAsJsonArray("hits");
+                appendToResult(hits, result);
+            }
+        } finally {
+            boolean clearResult = client.clearScroll(scrollId);
+            Assert.assertTrue(clearResult);
+        }
+        Assert.assertEquals(result.size(), jestResult.getJsonObject().getAsJsonObject("hits").get("total").getAsLong());
+    }
 
+    @SuppressWarnings("unchecked")
+    private void appendToResult(JsonArray jsonArray, Map<String, Map<String, Object>> result) {
+        Gson gson = new Gson();
+        for (JsonElement searchHit : jsonArray) {
+            JsonObject jsonObject = searchHit.getAsJsonObject().get("_source").getAsJsonObject();
+            result.put(searchHit.getAsJsonObject().get("_id").getAsString(), gson.fromJson(jsonObject, Map.class));
+        }
     }
 
     @After

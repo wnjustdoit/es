@@ -1,5 +1,6 @@
 package com.caiya.elasticsearch.core;
 
+import com.caiya.elasticsearch.BaseElasticSearchTest;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.elasticsearch.action.support.WriteRequest;
@@ -20,13 +21,12 @@ public class ElasticSearchTest extends BaseElasticSearchTest {
 
     @Before
     public void before() {
-        Map<String, String> kvs = Maps.newHashMap();
-        kvs.put("cluster.name", "elasticsearch");
-        kvs.put("client.transport.sniff", "true");
-        kvs.put("xpack.security.user", "elastic:changeme");
+        Map<String, String> settings = Maps.newHashMap();
+        settings.put("cluster.name", "elasticsearch");
+        settings.put("xpack.security.user", "elastic:changeme");
         List<String> clusters = Lists.newArrayList("127.0.0.1:9300", "127.0.0.1:9301");
-        elasticSearchClient = ElasticSearchClientBuilder.create(kvs, clusters)
-                .setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL.getValue())
+        elasticSearchClient = ElasticSearchClientBuilder.create(settings, clusters)
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE.getValue())
                 .setRefresh(false)
                 .build();
     }

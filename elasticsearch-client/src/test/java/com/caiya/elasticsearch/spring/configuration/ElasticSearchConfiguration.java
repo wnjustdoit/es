@@ -1,10 +1,10 @@
-package com.caiya.elasticsearch.spring.test.configuration;
+package com.caiya.elasticsearch.spring.configuration;
 
 import com.caiya.elasticsearch.EsClient;
 import com.caiya.elasticsearch.core.ElasticSearchTemplate;
 import com.caiya.elasticsearch.jestclient.JestSearchClient;
-import com.caiya.elasticsearch.spring.test.component.ElasticSearchProperties;
-import com.caiya.elasticsearch.spring.test.component.JestSearchProperties;
+import com.caiya.elasticsearch.spring.component.ElasticSearchProperties;
+import com.caiya.elasticsearch.spring.component.JestSearchProperties;
 import io.searchbox.client.config.HttpClientConfig;
 import org.elasticsearch.action.support.WriteRequest;
 import org.springframework.context.annotation.Bean;
@@ -34,8 +34,9 @@ public class ElasticSearchConfiguration {
         ElasticSearchTemplate elasticSearchTemplate = new ElasticSearchTemplate();
         elasticSearchTemplate.setSettings(elasticSearchProperties.getSettings());
         elasticSearchTemplate.setClusters(elasticSearchProperties.getClusters());
-        elasticSearchTemplate.setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL);
-        elasticSearchTemplate.setClientType(EsClient.Type.TRANSPORT);
+        elasticSearchTemplate.setRefreshPolicy(elasticSearchProperties.getRefreshPolicy());
+        elasticSearchTemplate.setRefresh(elasticSearchProperties.isRefresh());
+        elasticSearchTemplate.setClientType(elasticSearchProperties.getType());
         return elasticSearchTemplate;
     }
 

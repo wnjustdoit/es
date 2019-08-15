@@ -211,14 +211,37 @@ public class JestSearchClient {
         }
     }
 
+    public JestResult searchScroll(Search search) {
+        try {
+            return client.execute(search);
+        } catch (IOException e) {
+            logger.error("searchScroll failed, search:{}", search, e);
+            throw new ElasticSearchException("searchScroll failed0");
+        }
+    }
 
-    public JestResult searchScroll(String index, String scrollId, String scroll, boolean refresh) {
-        SearchScroll searchScroll = new SearchScroll.Builder(scrollId, scroll).refresh(refresh).addIndex(index).build();
+    public JestResult searchScroll(String scrollId) {
+        return searchScroll(scrollId, false);
+    }
+
+    public JestResult searchScroll(String scrollId, boolean refresh) {
+        SearchScroll searchScroll = new SearchScroll.Builder(scrollId, "1m")
+//                .refresh(refresh)
+                .build();
         try {
             return client.execute(searchScroll);
         } catch (IOException e) {
-            logger.error("searchScroll failed, index:{}, scrollId:{}, scroll:{}", index, scrollId, scroll, e);
-            throw new ElasticSearchException("searchScroll failed");
+            logger.error("searchScroll failed, scrollId:{}, refresh:{}", scrollId, refresh, e);
+            throw new ElasticSearchException("searchScroll failed1");
+        }
+    }
+
+    public boolean clearScroll(String scrollId) {
+        try {
+            return client.execute(new ClearScroll.Builder().addScrollId(scrollId).build()).isSucceeded();
+        } catch (IOException e) {
+            logger.error("clearScroll failed, scrollId:{}", scrollId, e);
+            throw new ElasticSearchException("clearScroll failed");
         }
     }
 

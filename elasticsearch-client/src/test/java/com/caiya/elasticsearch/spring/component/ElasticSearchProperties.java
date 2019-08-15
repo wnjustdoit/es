@@ -1,6 +1,8 @@
-package com.caiya.elasticsearch.spring.test.component;
+package com.caiya.elasticsearch.spring.component;
 
+import com.caiya.elasticsearch.EsClient;
 import lombok.Data;
+import org.elasticsearch.action.support.WriteRequest;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -22,5 +24,10 @@ public class ElasticSearchProperties {
 
     private List<String> clusters;
 
+    private EsClient.Type type = EsClient.Type.REST_HIGH_LEVEL;
+
+    private WriteRequest.RefreshPolicy refreshPolicy = WriteRequest.RefreshPolicy.NONE;
+
+    private boolean refresh = false;
 
 }

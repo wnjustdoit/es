@@ -1,5 +1,6 @@
 package com.caiya.elasticsearch;
 
+import com.caiya.elasticsearch.core.RestElasticSearchClientBuilder;
 import org.elasticsearch.action.support.WriteRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,10 +79,20 @@ public abstract class EsClient implements ElasticSearchApi, Closeable {
     }
 
     public enum Type {
+
         TRANSPORT,
-        @Deprecated
+
+        /**
+         * {@link RestElasticSearchClientBuilder#buildOriginalLowLevelClient()}
+         */
         REST,
-        REST_HIGH_LEVEL
+
+        REST_HIGH_LEVEL,
+
+        /**
+         * {@link com.caiya.elasticsearch.jestclient.JestSearchClient#builder()}
+         */
+        JEST;
     }
 
 }

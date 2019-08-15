@@ -1,4 +1,4 @@
-package com.caiya.elasticsearch.spring.test.component;
+package com.caiya.elasticsearch.spring.component;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

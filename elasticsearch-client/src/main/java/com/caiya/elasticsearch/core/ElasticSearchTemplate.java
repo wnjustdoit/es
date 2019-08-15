@@ -43,29 +43,32 @@ public class ElasticSearchTemplate extends ElasticSearchAccessor implements Elas
 
         if (Objects.equals(getClientType(), EsClient.Type.TRANSPORT)) {
             return ElasticSearchClientBuilder.create(getSettings(), getClusters())
+                    .setRefreshPolicy(getRefreshPolicy().getValue())
                     .setRefresh(getRefresh())
                     .build();
         } else if (Objects.equals(getClientType(), EsClient.Type.REST_HIGH_LEVEL)) {
             return RestElasticSearchClientBuilder.create(getClusters())
+                    .setRefreshPolicy(getRefreshPolicy().getValue())
                     .setRefresh(getRefresh())
                     .build();
         }
+
         throw new IllegalArgumentException("Unsupported client type:" + getClientType());
     }
 
     private void close(Closeable client) {
-        if (client != null)
+        if (client != null) {
             try {
                 client.close();
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
+        }
     }
 
     public <T> T execute(ElasticSearchCallback<T> callback) {
-        EsClient client = null;
+        EsClient client = getClient();
         try {
-            client = getClient();
             return callback.doInElasticSearch(client);
         } finally {
             close(client);
@@ -195,4 +198,8 @@ public class ElasticSearchTemplate extends ElasticSearchAccessor implements Elas
         return execute(client -> client.scroll(scrollId));
     }
 
+    @Override
+    public boolean clearScroll(String scrollId) {
+        return execute(client -> client.clearScroll(scrollId));
+    }
 }

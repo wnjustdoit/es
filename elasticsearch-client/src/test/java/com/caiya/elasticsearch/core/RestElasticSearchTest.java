@@ -1,5 +1,6 @@
 package com.caiya.elasticsearch.core;
 
+import com.caiya.elasticsearch.BaseElasticSearchTest;
 import com.google.common.collect.Lists;
 import org.elasticsearch.action.support.WriteRequest;
 import org.junit.*;
@@ -20,7 +21,7 @@ public class RestElasticSearchTest extends BaseElasticSearchTest {
     public void before() {
         List<String> clusters = Lists.newArrayList("127.0.0.1:9200", "127.0.0.1:9201");
         elasticSearchClient = RestElasticSearchClientBuilder.create(clusters)
-                .setRefreshPolicy(WriteRequest.RefreshPolicy.WAIT_UNTIL.getValue())
+                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE.getValue())
                 .setRefresh(false)
                 .build();
     }
@@ -32,4 +33,8 @@ public class RestElasticSearchTest extends BaseElasticSearchTest {
     }
 
 
+    @Override
+    @Ignore
+    public void test_Z2_deleteByQuery() {
+    }
 }

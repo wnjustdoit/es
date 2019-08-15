@@ -1,0 +1,13 @@
+es:
+  settings: {cluster.name: elasticsearch, client.transport.sniff: true, xpack.security.user: 'elastic:changeme'}
+  type: REST_HIGH_LEVEL
+  refreshPolicy: NONE
+  refresh: false
+  clusters:
+  - 127.0.0.1:9200
+  - 127.0.0.1:9201
+jest:
+  clusters:
+  - http://127.0.0.1:9200
+  - http://127.0.0.1:9201
+

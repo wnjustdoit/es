@@ -15,6 +15,7 @@ import org.elasticsearch.action.get.*;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -71,7 +72,7 @@ public class RestElasticSearchClient extends EsClient {
             response = client.index(new IndexRequest(index, type, id)
                     .setRefreshPolicy(getRefreshPolicy())
                     .source(source, XContentType.JSON));
-            return RestStatus.OK.equals(response.status());
+            return RestStatus.OK.equals(response.status()) || RestStatus.CREATED.equals(response.status());
         } catch (IOException e) {
             logger.error("index failed, index:{}, type:{}, id:{}, source:{}", index, type, id, source, e);
             throw new ElasticSearchException(e);
@@ -250,8 +251,7 @@ public class RestElasticSearchClient extends EsClient {
         List<IndexRequest> indexRequests = Lists.newArrayList();
         for (Map.Entry<String, String> idSource : idSources.entrySet()) {
             IndexRequest indexRequest = new IndexRequest(index, type, idSource.getKey())
-                    .source(idSource.getValue(), XContentType.JSON)
-                    .setRefreshPolicy(getRefreshPolicy());
+                    .source(idSource.getValue(), XContentType.JSON);
             indexRequests.add(indexRequest);
         }
         bulk(indexRequests, null, null, null, null, null);
@@ -261,8 +261,7 @@ public class RestElasticSearchClient extends EsClient {
     public void bulkDelete(String index, String type, List<String> ids) {
         List<DeleteRequest> deleteRequests = Lists.newArrayList();
         for (String id : ids) {
-            DeleteRequest deleteRequest = new DeleteRequest(index, type, id)
-                    .setRefreshPolicy(getRefreshPolicy());
+            DeleteRequest deleteRequest = new DeleteRequest(index, type, id);
             deleteRequests.add(deleteRequest);
         }
         bulk(null, null, null, null, deleteRequests, null);
@@ -303,7 +302,7 @@ public class RestElasticSearchClient extends EsClient {
             response = client.search(new SearchRequest(index)
                     .types(type)
                     .source(SearchSourceBuilder.searchSource().query(queryBuilder)
-                            .from(0)
+                            .from(from)
                             .size(size)));
             return response.getHits();
         } catch (IOException e) {
@@ -335,7 +334,8 @@ public class RestElasticSearchClient extends EsClient {
                 .sort(sortField, sortOrder)
                 .size(size);
         SearchRequest searchRequest = new SearchRequest(index)
-                .source(searchSourceBuilder);
+                .source(searchSourceBuilder)
+                .scroll(TimeValue.timeValueMinutes(1));
         try {
             return client.search(searchRequest);
         } catch (IOException e) {
@@ -349,11 +349,22 @@ public class RestElasticSearchClient extends EsClient {
     public SearchResponse scroll(String scrollId) {
         try {
             return client.searchScroll(new SearchScrollRequest(scrollId)
-                    .scroll(new TimeValue(60000)));
+                    .scroll(TimeValue.timeValueMinutes(1)));
         } catch (IOException e) {
             logger.error("scroll failed, scrollId:{}", scrollId, e);
             throw new ElasticSearchException(e);
         }
     }
 
+    @Override
+    public boolean clearScroll(String scrollId) {
+        ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+        clearScrollRequest.addScrollId(scrollId);
+        try {
+            return client.clearScroll(clearScrollRequest).isSucceeded();
+        } catch (IOException e) {
+            logger.error("clearScroll failed, scrollId:{}", scrollId, e);
+            throw new ElasticSearchException(e);
+        }
+    }
 }
