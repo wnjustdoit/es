@@ -1,12 +1,10 @@
 package com.caiya.elasticsearch.spring.configuration;
 
-import com.caiya.elasticsearch.EsClient;
 import com.caiya.elasticsearch.core.ElasticSearchTemplate;
 import com.caiya.elasticsearch.jestclient.JestSearchClient;
 import com.caiya.elasticsearch.spring.component.ElasticSearchProperties;
 import com.caiya.elasticsearch.spring.component.JestSearchProperties;
 import io.searchbox.client.config.HttpClientConfig;
-import org.elasticsearch.action.support.WriteRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

@@ -49,8 +49,27 @@
     </repositories>
 ```
 
+* com.caiya.elasticsearch.jestclient包下是jest客户端的实现
 
-
+---
+#### 用法
+1. 将elastic-client、es-spring-boot-starter模块打成jar包并上传私服；
+2. 引入如下maven坐标：
+```xml
+    <!-- java环境 -->
+    <dependency>
+        <groupId>com.caiya</groupId>
+        <artifactId>elasticsearch-client</artifactId>
+        <version>${latest.version}</version>
+    </dependency>
+    <!-- spring环境 -->
+    <dependency>
+        <groupId>com.caiya</groupId>
+        <artifactId>es-spring-boot-starter</artifactId>
+        <version>${latest.version}</version>
+    </dependency>
+```
+3. 具体用法见各模块的单元测试（推荐选择com.caiya.elasticsearch.EsClient.Type.REST_HIGH_LEVEL客户端调用类型）
 
 
 

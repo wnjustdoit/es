@@ -1,0 +1,6 @@
+es:
+  settings: {cluster.name: elasticsearch, xpack.security.user: 'elastic:changeme'}
+  clusters:
+  - 127.0.0.1:9200
+  - 127.0.0.1:9201
+

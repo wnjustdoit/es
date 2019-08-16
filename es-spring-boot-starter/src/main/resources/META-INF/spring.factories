@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  com.caiya.elasticsearch.spring.starter.ElasticSearchAutoConfiguration
