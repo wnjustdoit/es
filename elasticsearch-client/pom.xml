@@ -23,7 +23,7 @@
         <jest.version>6.3.0</jest.version>
         <guava.version>19.0</guava.version>
         <fastjson.version>1.2.40</fastjson.version>
-        <commons-collections4.version>4.0</commons-collections4.version>
+        <commons-collections4.version>4.1</commons-collections4.version>
         <commons-lang3.version>3.4</commons-lang3.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <log4j-to-slf4j.version>2.9.1</log4j-to-slf4j.version>
