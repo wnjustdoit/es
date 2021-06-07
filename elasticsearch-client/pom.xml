@@ -27,7 +27,7 @@
         <commons-lang3.version>3.4</commons-lang3.version>
         <slf4j-api.version>1.7.22</slf4j-api.version>
         <log4j-to-slf4j.version>2.9.1</log4j-to-slf4j.version>
-        <logback.version>1.1.11</logback.version>
+        <logback.version>1.2.0</logback.version>
 
         <spring-boot.version>2.0.4.RELEASE</spring-boot.version>
         <lombok.version>1.18.4</lombok.version>
