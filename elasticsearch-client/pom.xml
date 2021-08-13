@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.60</version>
+            <version>1.67</version>
         </dependency>
         <!-- ========原生es client依赖 end======== -->
         <dependency>
